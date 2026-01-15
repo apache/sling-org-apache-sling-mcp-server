@@ -1,4 +1,10 @@
 github:
+  description: "Apache Sling MCP Server"
+  labels:
+  - "sling"
+  - "java"
+  - "mcp"
+  homepage: "https://sling.apache.org"
   pull_requests:
     del_branch_on_merge: true
   protected_branches:
