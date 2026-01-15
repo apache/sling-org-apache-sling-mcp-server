@@ -32,6 +32,12 @@
 
     <name>Apache Sling MCP Server</name>
 
+    <scm>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-mcp-server.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-mcp-server.git</developerConnection>
+        <url>https://github.com/apache/sling-org-apache-sling-mcp-server.git</url>
+    </scm>
+
     <properties>
         <sling.java.version>17</sling.java.version>
         <!-- Run with -Dslingfeature.app.vmOption=-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=30303 for debug mode-->
