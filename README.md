@@ -17,3 +17,4 @@ $ mvn -f ../mcp-server-contributions/ install sling:install
 ```
 
 Then open up your coding assistant tool and add an remote MCP server with location http://localhost:8080/mcp .
+
