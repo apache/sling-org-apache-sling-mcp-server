@@ -28,7 +28,9 @@ import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.json.schema.jackson.DefaultJsonSchemaValidator;
 import io.modelcontextprotocol.server.McpServer;
+import io.modelcontextprotocol.server.McpStatelessRequestHandler;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncPromptSpecification;
+import io.modelcontextprotocol.server.McpStatelessServerHandler;
 import io.modelcontextprotocol.server.McpStatelessSyncServer;
 import io.modelcontextprotocol.server.transport.HttpServletStatelessServerTransport;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -52,6 +54,9 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 
 import static org.osgi.service.component.annotations.ReferenceCardinality.MULTIPLE;
 import static org.osgi.service.component.annotations.ReferencePolicyOption.GREEDY;
@@ -80,6 +85,7 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
     private static final long serialVersionUID = 1L;
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private McpStatelessSyncServer syncServer;
     private HttpServletStatelessServerTransport transportProvider;
     private MethodHandle doGetMethod;
@@ -138,6 +144,10 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
                         .build())
                 .build();
 
+        // workaround for https://github.com/modelcontextprotocol/java-sdk/issues/776
+        // cursor tries to register for resource updates even if we don't advertise that capability
+        tryRegisterNoopResourcesSubscribeHandler();
+
         contributions.stream()
                 .map(McpServerContribution::getSyncToolSpecification)
                 .flatMap(List::stream)
@@ -157,6 +167,28 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
                 .map(McpServerContribution::getSyncPromptSpecification)
                 .flatMap(List::stream)
                 .forEach(syncPrompt -> syncServer.addPrompt(syncPrompt));
+    }
+
+    private void tryRegisterNoopResourcesSubscribeHandler() {
+        try {
+            MethodHandles.Lookup transportLookup =
+                    MethodHandles.privateLookupIn(HttpServletStatelessServerTransport.class, LOOKUP);
+            MethodHandle mcpHandlerGetter = transportLookup.findGetter(
+                    HttpServletStatelessServerTransport.class, "mcpHandler", McpStatelessServerHandler.class);
+            Object mcpHandler = mcpHandlerGetter.invoke(transportProvider);
+
+            Class<?> handlerClass = mcpHandler.getClass();
+            MethodHandles.Lookup handlerLookup = MethodHandles.privateLookupIn(handlerClass, LOOKUP);
+            MethodHandle requestHandlersGetter = handlerLookup.findGetter(handlerClass, "requestHandlers", Map.class);
+            Map<String, McpStatelessRequestHandler<?>> handlers =
+                    (Map<String, McpStatelessRequestHandler<?>>) requestHandlersGetter.invoke(mcpHandler);
+
+            handlers.put(McpSchema.METHOD_RESOURCES_SUBSCRIBE, (context, params) -> Mono.just(Map.of()));
+        } catch (Throwable t) {
+            logger.warn(
+                    "Failed to register MCP resources subscribe handler, non-compliant clients requesting resource updates might fail",
+                    t);
+        }
     }
 
     @Reference(policy = ReferencePolicy.DYNAMIC, policyOption = GREEDY, cardinality = MULTIPLE)
