@@ -1,7 +1,7 @@
 # 1. workaround for https://github.com/modelcontextprotocol/java-sdk/issues/562
 # 2. compatibility with javax.servlet
-Private-Package: io.modelcontextprotocol.json.jackson, \
-    io.modelcontextprotocol.json.schema.jackson, \
+# 3. mcp-core is inlined via Private-Package (compile-scoped dep, no jar-in-jar needed)
+Private-Package: io.modelcontextprotocol.*;-split-package:=merge-first, \
     jakarta.servlet, \
     jakarta.servlet.annotation, \
     jakarta.servlet.descriptor, \
@@ -11,10 +11,20 @@ Private-Package: io.modelcontextprotocol.json.jackson, \
 
 # compatibility with slf4j 1.7 and 2.0. A bit of the gamble since we assume that libraries
 # that compile against slf4j 2.x only use 1.7 APIs
-Import-Package:  org.slf4j;version="[1.7,2)", \
+Import-Package: org.slf4j;version="[1.7,2)", \
     *
 
-# Strictly control exports to prevent bnd from exporting packages that from embedded dependencies
--exportcontents: org.apache.sling.mcp.server.spi
+# -exportcontents only adds export headers to packages already included above.
+# Packages not listed here (json.jackson, json.schema.jackson, server.transport) stay private.
+-exportcontents: org.apache.sling.mcp.server.spi, \
+    io.modelcontextprotocol.client;version="0.17.0", \
+    io.modelcontextprotocol.client.transport;version="0.17.0", \
+    io.modelcontextprotocol.client.transport.customizer;version="0.17.0", \
+    io.modelcontextprotocol.common;version="0.17.0", \
+    io.modelcontextprotocol.json;version="0.17.0", \
+    io.modelcontextprotocol.json.schema;version="0.17.0", \
+    io.modelcontextprotocol.server;version="0.17.0", \
+    io.modelcontextprotocol.spec;version="0.17.0", \
+    io.modelcontextprotocol.util;version="0.17.0"
 
 Sling-Initial-Content: SLING-INF/libs/sling/mcp/prompts;path:=/libs/sling/mcp/prompts;overwrite:=true
