@@ -42,6 +42,8 @@
         <sling.java.version>17</sling.java.version>
         <!-- Run with -Dslingfeature.app.vmOption=-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=30303 for debug mode-->
         <slingfeature.app.vmOption />
+        <!-- Directory for legacy variant classes -->
+        <legacy.classes.directory>${project.build.directory}/classes-legacy</legacy.classes.directory>
     </properties>
 
     <dependencies>
@@ -276,7 +278,79 @@
                     </launches>
                 </configuration>
             </plugin>
+            <!-- Configure RAT to exclude bnd-legacy.bnd (similar to bnd.bnd in parent) -->
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <excludes combine.children="append">
+                        <exclude>bnd-legacy.bnd</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- legacy compatibility (slf4j 1.x, javax.servlet) -->
+        <profile>
+            <id>legacy-compat</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- Configure bnd-maven-plugin to generate an additional jar based on a different bnd file -->
+                    <plugin>
+                        <groupId>biz.aQute.bnd</groupId>
+                        <artifactId>bnd-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>bnd-process-legacy</id>
+                                <goals>
+                                    <goal>bnd-process</goal>
+                                </goals>
+                                <configuration>
+                                    <bndfile>bnd-legacy.bnd</bndfile>
+                                    <manifestPath>${legacy.classes.directory}/META-INF/MANIFEST.MF</manifestPath>
+                                    <outputDir>${legacy.classes.directory}</outputDir>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Configure jar plugin to create legacy variant from classes-legacy -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>legacy-jar</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>legacy</classifier>
+                                    <classesDirectory>${legacy.classes.directory}</classesDirectory>
+                                    <archive>
+                                        <manifestFile>${legacy.classes.directory}/META-INF/MANIFEST.MF</manifestFile>
+                                    </archive>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Configure RAT to exclude bnd-legacy.bnd (similar to bnd.bnd in parent) -->
+                    <plugin>
+                        <groupId>org.apache.rat</groupId>
+                        <artifactId>apache-rat-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.children="append">
+                                <exclude>bnd-legacy.bnd</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
