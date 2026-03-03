@@ -5,7 +5,11 @@
         "start-order": 25
     },
     {
-        "id": "io.modelcontextprotocol.sdk:mcp-core:0.17.0",
+        "id": "io.modelcontextprotocol.sdk:mcp-core:1.0.0",
+        "start-order": 25
+    },
+    {
+        "id": "io.modelcontextprotocol.sdk:mcp-json-jackson2:1.0.0",
         "start-order": 25
     },
     {

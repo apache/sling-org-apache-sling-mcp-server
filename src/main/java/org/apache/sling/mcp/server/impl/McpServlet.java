@@ -25,8 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.modelcontextprotocol.common.McpTransportContext;
-import io.modelcontextprotocol.json.McpJsonMapper;
-import io.modelcontextprotocol.json.schema.jackson.DefaultJsonSchemaValidator;
+import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpStatelessRequestHandler;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncPromptSpecification;
@@ -95,13 +94,12 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
     public McpServlet(
             BundleContext ctx,
             Config config,
-            @Reference McpJsonMapper jsonMapper,
             @Reference(cardinality = MULTIPLE, policyOption = GREEDY) List<McpServerContribution> contributions)
             throws IllegalAccessException, NoSuchMethodException {
 
         transportProvider = HttpServletStatelessServerTransport.builder()
                 .messageEndpoint(ENDPOINT)
-                .jsonMapper(jsonMapper)
+                .jsonMapper(McpJsonDefaults.getMapper())
                 .contextExtractor(request -> McpTransportContext.create(
                         Map.of("resourceResolver", ((SlingJakartaHttpServletRequest) request).getResourceResolver())))
                 .build();
@@ -132,8 +130,8 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
 
         syncServer = McpServer.sync(transportProvider)
                 .serverInfo(config.serverTitle(), serverVersion)
-                .jsonMapper(jsonMapper)
-                .jsonSchemaValidator(new DefaultJsonSchemaValidator())
+                .jsonMapper(McpJsonDefaults.getMapper())
+                .jsonSchemaValidator(McpJsonDefaults.getSchemaValidator())
                 .instructions(config.instructions())
                 .completions(completions)
                 .capabilities(ServerCapabilities.builder()
