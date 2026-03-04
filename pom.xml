@@ -278,13 +278,14 @@
                     </launches>
                 </configuration>
             </plugin>
-            <!-- Configure RAT to exclude bnd-legacy.bnd (similar to bnd.bnd in parent) -->
             <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
                 <configuration>
                     <excludes combine.children="append">
                         <exclude>bnd-legacy.bnd</exclude>
+                        <exclude>src/main/appended-resources/META-INF/*</exclude>
+                        <exclude>src/main/appended-resources-legacy/META-INF/*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -300,6 +301,30 @@
             </activation>
             <build>
                 <plugins>
+                    <!-- Append legacy-specific license content to bnd-generated LICENSE/NOTICE -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>append-legacy-license</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <target>
+                                        <concat append="true" destfile="${legacy.classes.directory}/META-INF/LICENSE">
+                                            <filelist dir="src/main/appended-resources-legacy/META-INF" files="LICENSE" />
+                                        </concat>
+                                        <concat append="true" destfile="${legacy.classes.directory}/META-INF/NOTICE">
+                                            <filelist dir="src/main/appended-resources-legacy/META-INF" files="NOTICE" />
+                                        </concat>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <!-- Configure bnd-maven-plugin to generate an additional jar based on a different bnd file -->
                     <plugin>
                         <groupId>biz.aQute.bnd</groupId>
@@ -337,16 +362,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                    <!-- Configure RAT to exclude bnd-legacy.bnd (similar to bnd.bnd in parent) -->
-                    <plugin>
-                        <groupId>org.apache.rat</groupId>
-                        <artifactId>apache-rat-plugin</artifactId>
-                        <configuration>
-                            <excludes combine.children="append">
-                                <exclude>bnd-legacy.bnd</exclude>
-                            </excludes>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

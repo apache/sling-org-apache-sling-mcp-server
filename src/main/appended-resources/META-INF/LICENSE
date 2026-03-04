@@ -1,0 +1,14 @@
+
+
+
+APACHE SLING MCP SERVER SUBCOMPONENTS:
+
+The Apache Sling MCP Server includes a number of subcomponents
+with separate copyright notices and license terms. Your use of the source
+code for these subcomponents is subject to the terms and conditions
+of the following licenses.
+
+For MCP SDK 0.17.0 (io.modelcontextprotocol:mcp-json-jackson2)
+
+This product bundles MCP SDK 0.17.0, which is available under a "MIT"
+license. For details, see https://github.com/modelcontextprotocol/java-sdk
