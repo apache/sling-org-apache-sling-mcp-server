@@ -18,6 +18,9 @@
  */
 package org.apache.sling.mcp.server.impl;
 
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -35,13 +38,11 @@ import io.modelcontextprotocol.server.McpStatelessSyncServer;
 import io.modelcontextprotocol.server.transport.HttpServletStatelessServerTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ServerCapabilities;
-import jakarta.servlet.Servlet;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.apache.sling.api.SlingJakartaHttpServletRequest;
-import org.apache.sling.api.SlingJakartaHttpServletResponse;
-import org.apache.sling.api.servlets.SlingJakartaAllMethodsServlet;
+import org.apache.felix.http.jakartawrappers.HttpServletRequestWrapper;
+import org.apache.felix.http.jakartawrappers.HttpServletResponseWrapper;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.servlets.SlingAllMethodsServlet;
 import org.apache.sling.mcp.server.spi.McpServerContribution;
 import org.apache.sling.servlets.annotations.SlingServletPaths;
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +65,7 @@ import static org.osgi.service.component.annotations.ReferencePolicyOption.GREED
 @Component(service = Servlet.class)
 @SlingServletPaths(value = {McpServlet.ENDPOINT})
 @Designate(ocd = McpServlet.Config.class)
-public class McpServlet extends SlingJakartaAllMethodsServlet {
+public class McpServlet extends SlingAllMethodsServlet {
 
     @ObjectClassDefinition(name = "Apache Sling MCP Server Configuration")
     public @interface Config {
@@ -102,8 +103,11 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
         transportProvider = HttpServletStatelessServerTransport.builder()
                 .messageEndpoint(ENDPOINT)
                 .jsonMapper(jsonMapper)
-                .contextExtractor(request -> McpTransportContext.create(
-                        Map.of("resourceResolver", ((SlingJakartaHttpServletRequest) request).getResourceResolver())))
+                .contextExtractor(request -> McpTransportContext.create(Map.of(
+                        "resourceResolver",
+                        ((BridgedJakartaHttpServletRequest) request)
+                                .getSlingRequest()
+                                .getResourceResolver())))
                 .build();
 
         MethodHandles.Lookup privateLookup =
@@ -113,12 +117,16 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
                 HttpServletStatelessServerTransport.class,
                 "doGet",
                 java.lang.invoke.MethodType.methodType(
-                        void.class, HttpServletRequest.class, HttpServletResponse.class));
+                        void.class,
+                        jakarta.servlet.http.HttpServletRequest.class,
+                        jakarta.servlet.http.HttpServletResponse.class));
         doPostMethod = privateLookup.findVirtual(
                 HttpServletStatelessServerTransport.class,
                 "doPost",
                 java.lang.invoke.MethodType.methodType(
-                        void.class, HttpServletRequest.class, HttpServletResponse.class));
+                        void.class,
+                        jakarta.servlet.http.HttpServletRequest.class,
+                        jakarta.servlet.http.HttpServletResponse.class));
 
         String serverVersion = config.serverVersion();
         if (serverVersion == null || serverVersion.isEmpty()) {
@@ -205,11 +213,13 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
     }
 
     @Override
-    protected void doGet(
-            @NotNull SlingJakartaHttpServletRequest request, @NotNull SlingJakartaHttpServletResponse response)
+    protected void doGet(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response)
             throws ServletException, IOException {
         try {
-            doGetMethod.invoke(transportProvider, request, response);
+            doGetMethod.invoke(
+                    transportProvider,
+                    new BridgedJakartaHttpServletRequest(request),
+                    new HttpServletResponseWrapper(response));
         } catch (ServletException | IOException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable t) {
@@ -218,11 +228,13 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
     }
 
     @Override
-    protected void doPost(
-            @NotNull SlingJakartaHttpServletRequest request, @NotNull SlingJakartaHttpServletResponse response)
+    protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response)
             throws ServletException, IOException {
         try {
-            doPostMethod.invoke(transportProvider, request, response);
+            doPostMethod.invoke(
+                    transportProvider,
+                    new BridgedJakartaHttpServletRequest(request),
+                    new HttpServletResponseWrapper(response));
         } catch (ServletException | IOException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable t) {
@@ -234,6 +246,19 @@ public class McpServlet extends SlingJakartaAllMethodsServlet {
     public void close() {
         if (syncServer != null) {
             syncServer.close();
+        }
+    }
+
+    static class BridgedJakartaHttpServletRequest extends HttpServletRequestWrapper {
+        private SlingHttpServletRequest slingRequest;
+
+        public BridgedJakartaHttpServletRequest(SlingHttpServletRequest request) {
+            super(request);
+            this.slingRequest = request;
+        }
+
+        public SlingHttpServletRequest getSlingRequest() {
+            return slingRequest;
         }
     }
 }

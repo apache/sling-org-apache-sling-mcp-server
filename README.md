@@ -18,3 +18,6 @@ $ mvn -f whiteboard/mcp-server-contributions/ install sling:install
 
 Then open up your coding assistant tool and add an remote MCP server with location http://localhost:8080/mcp .
 
+## Legacy artifact
+
+For applications still using the older slf4j 1.x and javax.servlet APIs a classifier with the 'legacy' classifier is built.
