@@ -40,6 +40,7 @@
 
     <properties>
         <sling.java.version>17</sling.java.version>
+        <sling.starter.version>14</sling.starter.version>
         <!-- Run with -Dslingfeature.app.vmOption=-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=30303 for debug mode-->
         <slingfeature.app.vmOption />
         <!-- Directory for legacy variant classes -->
@@ -196,28 +197,28 @@
                                 <groupId>org.apache.sling</groupId>
                                 <artifactId>org.apache.sling.starter</artifactId>
                                 <classifier>nosample_base</classifier>
-                                <version>14-SNAPSHOT</version>
+                                <version>${sling.starter.version}</version>
                                 <type>slingosgifeature</type>
                             </includeArtifact>
                             <includeArtifact>
                                 <groupId>org.apache.sling</groupId>
                                 <artifactId>org.apache.sling.starter</artifactId>
                                 <classifier>oak_persistence_sns</classifier>
-                                <version>14-SNAPSHOT</version>
+                                <version>${sling.starter.version}</version>
                                 <type>slingosgifeature</type>
                             </includeArtifact>
                             <includeArtifact>
                                 <groupId>org.apache.sling</groupId>
                                 <artifactId>org.apache.sling.starter</artifactId>
                                 <classifier>starter</classifier>
-                                <version>14-SNAPSHOT</version>
+                                <version>${sling.starter.version}</version>
                                 <type>slingosgifeature</type>
                             </includeArtifact>
                             <includeArtifact>
                                 <groupId>org.apache.sling</groupId>
                                 <artifactId>org.apache.sling.starter</artifactId>
                                 <classifier>composum</classifier>
-                                <version>14-SNAPSHOT</version>
+                                <version>${sling.starter.version}</version>
                                 <type>slingosgifeature</type>
                             </includeArtifact>
                         </aggregate>
