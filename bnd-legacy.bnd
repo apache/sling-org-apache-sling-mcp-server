@@ -1,8 +1,5 @@
-# 1. workaround for https://github.com/modelcontextprotocol/java-sdk/issues/562
-# 2. compatibility with javax.servlet
-Private-Package: io.modelcontextprotocol.json.jackson, \
-    io.modelcontextprotocol.json.schema.jackson, \
-    jakarta.servlet, \
+# ensure compatibility with javax.servlet
+Private-Package: jakarta.servlet, \
     jakarta.servlet.annotation, \
     jakarta.servlet.descriptor, \
     jakarta.servlet.http, \

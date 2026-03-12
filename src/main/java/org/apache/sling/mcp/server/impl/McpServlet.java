@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.modelcontextprotocol.common.McpTransportContext;
-import io.modelcontextprotocol.json.McpJsonMapper;
-import io.modelcontextprotocol.json.schema.jackson.DefaultJsonSchemaValidator;
+import io.modelcontextprotocol.json.McpJsonMapperSupplier;
+import io.modelcontextprotocol.json.schema.JsonSchemaValidatorSupplier;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpStatelessRequestHandler;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncPromptSpecification;
@@ -96,13 +96,14 @@ public class McpServlet extends SlingAllMethodsServlet {
     public McpServlet(
             BundleContext ctx,
             Config config,
-            @Reference McpJsonMapper jsonMapper,
+            @Reference McpJsonMapperSupplier jsonMapperSupplier,
+            @Reference JsonSchemaValidatorSupplier jsonSchemaValidatorSupplier,
             @Reference(cardinality = MULTIPLE, policyOption = GREEDY) List<McpServerContribution> contributions)
             throws IllegalAccessException, NoSuchMethodException {
 
         transportProvider = HttpServletStatelessServerTransport.builder()
                 .messageEndpoint(ENDPOINT)
-                .jsonMapper(jsonMapper)
+                .jsonMapper(jsonMapperSupplier.get())
                 .contextExtractor(request -> McpTransportContext.create(Map.of(
                         "resourceResolver",
                         ((BridgedJakartaHttpServletRequest) request)
@@ -140,8 +141,8 @@ public class McpServlet extends SlingAllMethodsServlet {
 
         syncServer = McpServer.sync(transportProvider)
                 .serverInfo(config.serverTitle(), serverVersion)
-                .jsonMapper(jsonMapper)
-                .jsonSchemaValidator(new DefaultJsonSchemaValidator())
+                .jsonMapper(jsonMapperSupplier.get())
+                .jsonSchemaValidator(jsonSchemaValidatorSupplier.get())
                 .instructions(config.instructions())
                 .completions(completions)
                 .capabilities(ServerCapabilities.builder()

@@ -1,6 +1,0 @@
-# workaround for https://github.com/modelcontextprotocol/java-sdk/issues/562
-Private-Package: io.modelcontextprotocol.json.jackson, \
-    io.modelcontextprotocol.json.schema.jackson
-
-# Strictly control exports to prevent bnd from exporting packages that from embedded dependencies
--exportcontents: org.apache.sling.mcp.server.spi
