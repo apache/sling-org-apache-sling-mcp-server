@@ -44,6 +44,7 @@ import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
 import org.apache.sling.mcp.server.spi.McpServerContribution;
+import org.apache.sling.mcp.server.spi.McpServerDescription;
 import org.apache.sling.servlets.annotations.SlingServletPaths;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.BundleContext;
@@ -51,6 +52,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
@@ -69,13 +71,11 @@ public class McpServlet extends SlingAllMethodsServlet {
 
     @ObjectClassDefinition(name = "Apache Sling MCP Server Configuration")
     public @interface Config {
-        @AttributeDefinition(name = "Server Title", description = "The title of the MCP server")
-        String serverTitle() default "Apache Sling";
-
         @AttributeDefinition(
-                name = "Server Version",
-                description = "The version of the MCP server. Defaults to the bundle version if not set")
-        String serverVersion();
+                name = "Server Name",
+                description =
+                        "The name of the MCP server. Can be overridden by a registered McpServerDescription service")
+        String serverName() default "Apache Sling";
 
         @AttributeDefinition(name = "Instructions", description = "Initial instructions for the MCP server")
         String instructions() default
@@ -98,6 +98,8 @@ public class McpServlet extends SlingAllMethodsServlet {
             Config config,
             @Reference McpJsonMapperSupplier jsonMapperSupplier,
             @Reference JsonSchemaValidatorSupplier jsonSchemaValidatorSupplier,
+            @Reference(cardinality = ReferenceCardinality.OPTIONAL, policyOption = GREEDY)
+                    McpServerDescription serverDescription,
             @Reference(cardinality = MULTIPLE, policyOption = GREEDY) List<McpServerContribution> contributions)
             throws IllegalAccessException, NoSuchMethodException {
 
@@ -129,18 +131,18 @@ public class McpServlet extends SlingAllMethodsServlet {
                         jakarta.servlet.http.HttpServletRequest.class,
                         jakarta.servlet.http.HttpServletResponse.class));
 
-        String serverVersion = config.serverVersion();
-        if (serverVersion == null || serverVersion.isEmpty()) {
-            serverVersion = ctx.getBundle().getVersion().toString();
-        }
-
         var completions = contributions.stream()
                 .map(McpServerContribution::getSyncCompletionSpecification)
                 .flatMap(List::stream)
                 .toList();
 
+        String serverName = serverDescription != null ? serverDescription.name() : config.serverName();
+        String serverVersion = serverDescription != null
+                ? serverDescription.version()
+                : ctx.getBundle().getVersion().toString();
+
         syncServer = McpServer.sync(transportProvider)
-                .serverInfo(config.serverTitle(), serverVersion)
+                .serverInfo(serverName, serverVersion)
                 .jsonMapper(jsonMapperSupplier.get())
                 .jsonSchemaValidator(jsonSchemaValidatorSupplier.get())
                 .instructions(config.instructions())
