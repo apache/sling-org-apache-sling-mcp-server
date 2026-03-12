@@ -63,6 +63,9 @@ public class RepositoryPromptsRegistrar {
 
                         try (ResourceResolver resolver = rrf.getAdministrativeResourceResolver(null)) {
                             for (ResourceChange change : changes) {
+                                if (!change.getPath().endsWith(".md")) {
+                                    continue;
+                                }
                                 if (change.getType() == ChangeType.REMOVED) {
                                     String promptName = getPromptName(change.getPath());
                                     ServiceRegistration<DiscoveredPrompt> sr = registrations.remove(promptName);
