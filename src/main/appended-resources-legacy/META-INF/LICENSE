@@ -1,0 +1,13 @@
+
+
+For Jakarta Servlet API 6.1.0 (jakarta.servlet:jakarta.servlet-api)
+
+This product bundles Jakarta Servlet API 6.1.0, which is available under
+"Eclipse Public License v. 2.0 OR GPL-2.0 WITH Classpath-exception-2.0"
+license. For details, see https://jakarta.ee/specifications/servlet/
+
+
+For Apache Felix HTTP Wrappers 6.1.0 (org.apache.felix:org.apache.felix.http.wrappers)
+
+This product bundles Apache Felix HTTP Wrappers 6.1.0, which is available
+under the Apache License 2.0. For details, see https://felix.apache.org/

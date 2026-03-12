@@ -1,1 +1,2 @@
-Sling-Initial-Content: SLING-INF/libs/sling/mcp/prompts;path:=/libs/sling/mcp/prompts;overwrite:=true
+# Strictly control exports to prevent bnd from exporting packages that from embedded dependencies
+-exportcontents: org.apache.sling.mcp.server.spi
