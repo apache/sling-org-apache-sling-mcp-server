@@ -1,2 +1,0 @@
-# Strictly control exports to prevent bnd from exporting packages that from embedded dependencies
--exportcontents: org.apache.sling.mcp.server.spi
