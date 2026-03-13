@@ -18,8 +18,11 @@
  */
 package org.apache.sling.mcp.server.impl;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
@@ -40,6 +43,8 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ServerCapabilities;
 import org.apache.felix.http.jakartawrappers.HttpServletRequestWrapper;
 import org.apache.felix.http.jakartawrappers.HttpServletResponseWrapper;
+import org.apache.jackrabbit.api.JackrabbitSession;
+import org.apache.jackrabbit.api.security.user.User;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
@@ -218,6 +223,13 @@ public class McpServlet extends SlingAllMethodsServlet {
     @Override
     protected void doGet(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response)
             throws ServletException, IOException {
+
+        User user = getCurrentUser(request);
+        if (user == null || !user.isAdmin()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied");
+            return;
+        }
+
         try {
             doGetMethod.invoke(
                     transportProvider,
@@ -230,9 +242,30 @@ public class McpServlet extends SlingAllMethodsServlet {
         }
     }
 
+    protected User getCurrentUser(SlingHttpServletRequest request) {
+        if (request.getResourceResolver().adaptTo(Session.class) instanceof JackrabbitSession jcrSession) {
+
+            String userId = jcrSession.getUserID();
+
+            try {
+                return jcrSession.getUserManager().getAuthorizable(userId, User.class);
+            } catch (RepositoryException e) {
+                logger.warn("Failed to retrieve user for ID {}, access will be denied", userId, e);
+            }
+        }
+        return null;
+    }
+
     @Override
     protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response)
             throws ServletException, IOException {
+
+        User user = getCurrentUser(request);
+        if (user == null || !user.isAdmin()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied");
+            return;
+        }
+
         try {
             doPostMethod.invoke(
                     transportProvider,

@@ -16,7 +16,21 @@ Then build and deploy the [MCP server contributions bundle from the Sling Whiteb
 $ mvn -f whiteboard/mcp-server-contributions/ install sling:install 
 ```
 
-Then open up your coding assistant tool and add an remote MCP server with location http://localhost:8080/mcp .
+Then open up your coding assistant tool and add an remote MCP server with location http://localhost:8080/mcp . Access is only
+permitted for the `admin` user therefore basic authentication headers need to be specified. In case of the default credentials
+the configuration can look as follows
+
+```json
+"aem-cs-sdk": {
+  "type": "streamable-http",
+  "url": "http://localhost:4502/bin/mcp",
+  "headers": {
+    "Authorization": "Basic YWRtaW46YWRtaW4="
+  }
+}
+```
+
+Please refer to the documentation of your coding assistant tool for details on how to add a remote MCP server and specify authentication headers.
 
 ## Legacy artifact
 
