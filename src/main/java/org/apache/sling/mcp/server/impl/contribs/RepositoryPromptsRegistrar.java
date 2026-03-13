@@ -19,6 +19,7 @@
 package org.apache.sling.mcp.server.impl.contribs;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.apache.sling.api.resource.observation.ResourceChange;
 import org.apache.sling.api.resource.observation.ResourceChange.ChangeType;
 import org.apache.sling.api.resource.observation.ResourceChangeListener;
 import org.apache.sling.mcp.server.impl.DiscoveredPrompt;
+import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -47,12 +49,17 @@ import org.slf4j.LoggerFactory;
 public class RepositoryPromptsRegistrar {
 
     private static final String PROMPT_LIBS_DIR = "/libs/sling/mcp/prompts";
+    private static final String SUBSERVICE_NAME = "mcp-prompts-reader";
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private ConcurrentMap<String, ServiceRegistration<DiscoveredPrompt>> registrations = new ConcurrentHashMap<>();
     private final DiscoveredPromptBuilder promptBuilder = new DiscoveredPromptBuilder();
 
     @Activate
-    public RepositoryPromptsRegistrar(@Reference ResourceResolverFactory rrf, BundleContext ctx) throws LoginException {
+    public RepositoryPromptsRegistrar(
+            @Reference ResourceResolverFactory rrf,
+            @Reference(target = "(subServiceName=" + SUBSERVICE_NAME + ")") ServiceUserMapped serviceUserMapped,
+            BundleContext ctx)
+            throws LoginException {
 
         ctx.registerService(
                 ResourceChangeListener.class,
@@ -61,7 +68,8 @@ public class RepositoryPromptsRegistrar {
                     @Override
                     public void onChange(@NotNull List<ResourceChange> changes) {
 
-                        try (ResourceResolver resolver = rrf.getAdministrativeResourceResolver(null)) {
+                        try (ResourceResolver resolver = rrf.getServiceResourceResolver(
+                                Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, SUBSERVICE_NAME))) {
                             for (ResourceChange change : changes) {
                                 if (!change.getPath().endsWith(".md")) {
                                     continue;
@@ -106,8 +114,8 @@ public class RepositoryPromptsRegistrar {
                             ResourceChangeListener.CHANGE_REMOVED
                         })));
 
-        // TODO - use service user
-        try (ResourceResolver resolver = rrf.getAdministrativeResourceResolver(null)) {
+        try (ResourceResolver resolver = rrf.getServiceResourceResolver(
+                Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, SUBSERVICE_NAME))) {
 
             Iterator<Resource> prompts = resolver.findResources(
                     "/jcr:root" + PROMPT_LIBS_DIR + "//element(*,nt:file)[jcr:like(fn:name(), '%.md')]", "xpath");

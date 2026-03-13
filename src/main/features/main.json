@@ -46,11 +46,10 @@
     }    
   ],
   "configurations": {
-        "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~mcp-server":{
-            "whitelist.bundles":[
-                "org.apache.sling.mcp-server"
-            ],
-            "whitelist.name":"mcp-server"
+        "org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~mcp-server":{
+            "user.mapping":[
+                "org.apache.sling.mcp-server:mcp-prompts-reader=[sling-search-path-reader]"
+            ]
         }
   }
 }
