@@ -3,6 +3,9 @@
         "jdks": [
           17,
           21
+        ],
+        "operatingSystems": [
+            "linux"
         ]
     }
 }

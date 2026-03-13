@@ -45,6 +45,8 @@
         <slingfeature.app.vmOption />
         <!-- Directory for legacy variant classes -->
         <legacy.classes.directory>${project.build.directory}/classes-legacy</legacy.classes.directory>
+        <!-- Integration test start timeout -->
+        <it.startTimeoutSeconds>120</it.startTimeoutSeconds>
     </properties>
 
     <dependencies>
@@ -174,6 +176,45 @@
             <version>3.27.6</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- integration test dependencies -->
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.testing.clients</artifactId>
+            <version>3.1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.pax.tinybundles</groupId>
+            <artifactId>tinybundles</artifactId>
+            <version>4.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>biz.aQute.bnd</groupId>
+            <artifactId>biz.aQute.bndlib</artifactId>
+            <version>${bnd.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.2.2</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- slf4j simple for IT logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- McpJsonMapperSupplier SPI implementation (Jackson2) needed by MCP client at test runtime -->
+        <dependency>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp-json-jackson2</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -272,23 +313,72 @@
                     <failOnMissing>false</failOnMissing>
                 </configuration>
             </plugin>
-            <!-- Added: Feature Launcher plugin for manually starting the aggregated 'app' feature -->
+            <!-- Reserve a random port for integration tests -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>reserve-network-port</id>
+                        <goals>
+                            <goal>reserve-network-port</goal>
+                        </goals>
+                        <phase>pre-integration-test</phase>
+                        <configuration>
+                            <portNames>
+                                <portName>http.port</portName>
+                            </portNames>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Feature Launcher plugin: manual start via 'mvn feature-launcher:start', and lifecycle-bound IT start/stop -->
             <plugin>
                 <groupId>org.apache.sling</groupId>
                 <artifactId>feature-launcher-maven-plugin</artifactId>
+                <version>1.0.4</version>
                 <configuration>
                     <launches>
                         <launch>
-                            <id>app</id>
+                            <id>sling-starter-oak-tar</id>
+                            <skip>${skipITs}</skip>
                             <featureFile>${project.slingfeature.outputDirectory}/feature-app.json</featureFile>
+                            <repositoryUrls>
+                                <repositoryUrl>file://${project.build.directory}/artifacts</repositoryUrl>
+                            </repositoryUrls>
                             <launcherArguments>
-                                <vmOptions>
-                                    <vmOption>${slingfeature.app.vmOption}</vmOption>
-                                </vmOptions>
+                                <frameworkProperties>
+                                    <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
+                                </frameworkProperties>
                             </launcherArguments>
+                            <startTimeoutSeconds>${it.startTimeoutSeconds}</startTimeoutSeconds>
                         </launch>
                     </launches>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <sling.http.port>${http.port}</sling.http.port>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.rat</groupId>
