@@ -49,3 +49,6 @@ To obtain a ready to use target file:
 ## Legacy artifact
 
 For applications still using the older slf4j 1.x and javax.servlet APIs a bundle with the 'legacy' classifier is built.
+
+This bundle is not included in the feature model used for local development and integration tests and needs to be deployed
+manually in the applications that consume it.
