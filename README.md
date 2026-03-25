@@ -48,4 +48,4 @@ To obtain a ready to use target file:
 
 ## Legacy artifact
 
-For applications still using the older slf4j 1.x and javax.servlet APIs a classifier with the 'legacy' classifier is built.
+For applications still using the older slf4j 1.x and javax.servlet APIs a bundle with the 'legacy' classifier is built.
