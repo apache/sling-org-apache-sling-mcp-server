@@ -10,10 +10,10 @@ Build the project with Maven and start up the MCP server, based on the Apache Sl
 $ mvn install feature-launcher:start feature-launcher:stop -Dfeature-launcher.waitForInput
 ```
 
-Then build and deploy the [MCP server contributions bundle from the Sling Whiteboard](https://github.com/apache/sling-whiteboard/tree/master/mcp-server-contributions):
+Then build and deploy the [MCP server contributions bundle](https://github.com/apache/sling-org-apache-sling-mcp-server-contributions):
 
 ```
-$ mvn -f whiteboard/mcp-server-contributions/ install sling:install 
+$ mvn -f ../org-apache-sling-mcp-server-contributions/pom.xml install sling:install 
 ```
 
 Then open up your coding assistant tool and add an remote MCP server with location http://localhost:8080/mcp . Access is only
