@@ -7,7 +7,7 @@ Experimental MCP Server implementation for Apache Sling.
 Build the project with Maven and start up the MCP server, based on the Apache Sling Starter:
 
 ```
-$ mvn install feature-launcher:start feature-launcher:stop -Dfeature-launcher.waitForInput
+$ mvn install feature-launcher:start feature-launcher:stop -Dfeature-launcher.waitForInput -Dhttp.port=8080
 ```
 
 Then build and deploy the [MCP server contributions bundle](https://github.com/apache/sling-org-apache-sling-mcp-server-contributions):
