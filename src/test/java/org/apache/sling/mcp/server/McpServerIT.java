@@ -19,11 +19,13 @@
 package org.apache.sling.mcp.server;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
@@ -47,6 +49,7 @@ class McpServerIT {
 
     private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration AWAIT_POLL_INTERVAL = Duration.ofMillis(500);
+    private static final String MCP_ENDPOINT = "/bin/mcp";
 
     private static int slingPort;
     private static McpItSupportBundle supportBundle;
@@ -70,18 +73,45 @@ class McpServerIT {
         supportBundle.install(sling.adaptTo(OsgiConsoleClient.class));
 
         // build the MCP sync client with HTTP Basic Auth for admin access.
-        String basicAuthHeader = "Basic " + Base64.getEncoder().encodeToString("admin:admin".getBytes());
+        String basicAuthHeader =
+                "Basic " + Base64.getEncoder().encodeToString("admin:admin".getBytes(StandardCharsets.UTF_8));
+        mcpClient = initializeMcpClient(basicAuthHeader);
+    }
+
+    private McpSyncClient initializeMcpClient(String basicAuthHeader) {
+        AtomicReference<McpSyncClient> initializedClient = new AtomicReference<>();
+
+        await("mcp client initializes")
+                .atMost(AWAIT_TIMEOUT)
+                .pollInterval(AWAIT_POLL_INTERVAL)
+                .ignoreExceptions()
+                .until(() -> {
+                    McpSyncClient candidate = buildMcpClient(basicAuthHeader);
+
+                    try {
+                        candidate.initialize();
+                        initializedClient.set(candidate);
+                        return true;
+                    } catch (RuntimeException e) {
+                        candidate.close();
+                        throw e;
+                    }
+                });
+
+        return initializedClient.get();
+    }
+
+    private McpSyncClient buildMcpClient(String basicAuthHeader) {
         HttpClientStreamableHttpTransport transport = HttpClientStreamableHttpTransport.builder(
                         "http://localhost:" + slingPort)
-                .endpoint("/bin/mcp")
+                .endpoint(MCP_ENDPOINT)
                 .customizeRequest(rb -> rb.header("Authorization", basicAuthHeader))
                 .build();
 
-        mcpClient = McpClient.sync(transport)
+        return McpClient.sync(transport)
                 .clientInfo(new McpSchema.Implementation("mcp-server-it", "1.0"))
                 .requestTimeout(Duration.ofSeconds(30))
                 .build();
-        mcpClient.initialize();
     }
 
     @AfterEach
