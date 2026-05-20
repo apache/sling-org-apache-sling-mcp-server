@@ -293,6 +293,7 @@
                         <goals>
                             <goal>aggregate-features</goal>
                             <goal>analyse-features</goal>
+                            <goal>attach-features</goal>
                         </goals>
                         <phase>prepare-package</phase>
                     </execution>
