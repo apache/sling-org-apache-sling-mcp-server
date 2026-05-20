@@ -28,14 +28,14 @@
     </parent>
 
     <artifactId>org.apache.sling.mcp-server</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.5-SNAPSHOT</version>
 
     <name>Apache Sling MCP Server</name>
 
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-mcp-server.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-mcp-server.git</developerConnection>
-        <tag>org.apache.sling.mcp-server-0.1.4</tag>
+        <tag>org.apache.sling.mcp-server-0.1.2</tag>
         <url>https://github.com/apache/sling-org-apache-sling-mcp-server.git</url>
     </scm>
 
