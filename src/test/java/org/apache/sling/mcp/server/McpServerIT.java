@@ -24,8 +24,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
@@ -79,26 +79,24 @@ class McpServerIT {
     }
 
     private McpSyncClient initializeMcpClient(String basicAuthHeader) {
-        AtomicReference<McpSyncClient> initializedClient = new AtomicReference<>();
 
-        await("mcp client initializes")
+        return await("mcp client initializes")
                 .atMost(AWAIT_TIMEOUT)
                 .pollInterval(AWAIT_POLL_INTERVAL)
                 .ignoreExceptions()
-                .until(() -> {
-                    McpSyncClient candidate = buildMcpClient(basicAuthHeader);
+                .until(
+                        () -> {
+                            McpSyncClient candidate = buildMcpClient(basicAuthHeader);
 
-                    try {
-                        candidate.initialize();
-                        initializedClient.set(candidate);
-                        return true;
-                    } catch (RuntimeException e) {
-                        candidate.close();
-                        throw e;
-                    }
-                });
-
-        return initializedClient.get();
+                            try {
+                                candidate.initialize();
+                                return candidate;
+                            } catch (RuntimeException e) {
+                                candidate.close();
+                                throw e;
+                            }
+                        },
+                        Objects::nonNull);
     }
 
     private McpSyncClient buildMcpClient(String basicAuthHeader) {
