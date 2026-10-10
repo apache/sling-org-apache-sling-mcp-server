@@ -21,7 +21,7 @@ permitted for the `admin` user therefore basic authentication headers need to be
 the configuration can look as follows
 
 ```json
-"aem-cs-sdk": {
+"sling-starter": {
   "type": "streamable-http",
   "url": "http://localhost:8080/bin/mcp",
   "headers": {
