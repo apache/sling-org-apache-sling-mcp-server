@@ -94,7 +94,11 @@ class DiscoveredPromptBuilder {
                             }
                         }
 
-                        arguments.add(new PromptArgument(argName, argTitle, argDesc, argRequired));
+                        arguments.add(PromptArgument.builder(argName)
+                                .title(argTitle)
+                                .description(argDesc)
+                                .required(argRequired)
+                                .build());
                     });
 
             return new RepositoryPrompt(prompt.getPath(), promptName, title, description, arguments);
@@ -156,7 +160,10 @@ class DiscoveredPromptBuilder {
                         }
                     }
 
-                    return List.of(new PromptMessage(Role.ASSISTANT, new TextContent(contents)));
+                    return List.of(PromptMessage.builder(
+                                    Role.ASSISTANT,
+                                    TextContent.builder(contents).build())
+                            .build());
                 }
             } catch (IOException e) {
                 return List.of();
@@ -165,7 +172,11 @@ class DiscoveredPromptBuilder {
 
         @Override
         public Prompt asPrompt() {
-            return new Prompt(promptName, promptTitle, promptDescription, arguments);
+            return Prompt.builder(promptName)
+                    .title(promptTitle)
+                    .description(promptDescription)
+                    .arguments(arguments)
+                    .build();
         }
     }
 }

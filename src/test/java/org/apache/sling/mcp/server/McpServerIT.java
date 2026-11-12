@@ -19,6 +19,7 @@
 package org.apache.sling.mcp.server;
 
 import java.net.URI;
+import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -103,11 +104,12 @@ class McpServerIT {
         HttpClientStreamableHttpTransport transport = HttpClientStreamableHttpTransport.builder(
                         "http://localhost:" + slingPort)
                 .endpoint(MCP_ENDPOINT)
-                .customizeRequest(rb -> rb.header("Authorization", basicAuthHeader))
+                .requestBuilder(HttpRequest.newBuilder().header("Authorization", basicAuthHeader))
                 .build();
 
         return McpClient.sync(transport)
-                .clientInfo(new McpSchema.Implementation("mcp-server-it", "1.0"))
+                .clientInfo(
+                        McpSchema.Implementation.builder("mcp-server-it", "1.0").build())
                 .requestTimeout(Duration.ofSeconds(30))
                 .build();
     }
@@ -148,5 +150,12 @@ class McpServerIT {
                 .first()
                 .isInstanceOfSatisfying(McpSchema.TextContent.class, tc -> assertThat(tc.text())
                         .isEqualTo(ItToolContribution.TOOL_RESPONSE));
+
+        McpSchema.CallToolResult invalidResult = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TOOL_NAME, Map.of("unexpected", "value")));
+
+        assertThat(invalidResult.isError())
+                .as("SDK rejects arguments that do not match the tool input schema")
+                .isTrue();
     }
 }

@@ -123,7 +123,14 @@ class DiscoveredPromptBuilderTest {
                         "Basic Prompt",
                         null,
                         List.of(
-                                new PromptArgument("first", "First Argument", "This is the first argument", true),
-                                new PromptArgument("second", "Second Argument", null, false)));
+                                PromptArgument.builder("first")
+                                        .title("First Argument")
+                                        .description("This is the first argument")
+                                        .required(true)
+                                        .build(),
+                                PromptArgument.builder("second")
+                                        .title("Second Argument")
+                                        .required(false)
+                                        .build()));
     }
 }

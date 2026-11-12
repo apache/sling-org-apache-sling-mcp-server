@@ -211,7 +211,7 @@ public class McpServlet extends SlingAllMethodsServlet {
     protected void bindPrompt(DiscoveredPrompt prompt, Map<String, Object> properties) {
         syncServer.addPrompt(new SyncPromptSpecification(prompt.asPrompt(), (c, r) -> {
             var messages = prompt.getPromptMessages(c, r);
-            return new McpSchema.GetPromptResult(null, messages);
+            return McpSchema.GetPromptResult.builder(messages).build();
         }));
     }
 
