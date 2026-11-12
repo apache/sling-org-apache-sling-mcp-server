@@ -149,7 +149,7 @@ public class McpServlet extends SlingAllMethodsServlet {
         syncServer = McpServer.sync(transportProvider)
                 .serverInfo(serverName, serverVersion)
                 .jsonMapper(jsonMapperSupplier.get())
-                .jsonSchemaValidator(jsonSchemaValidatorSupplier.get())
+                .jsonSchemaValidator(new LogSafeJsonSchemaValidator(jsonSchemaValidatorSupplier.get()))
                 .instructions(config.instructions())
                 .completions(completions)
                 .capabilities(ServerCapabilities.builder()
@@ -164,10 +164,18 @@ public class McpServlet extends SlingAllMethodsServlet {
         // cursor tries to register for resource updates even if we don't advertise that capability
         tryRegisterNoopResourcesSubscribeHandler();
 
-        contributions.stream()
-                .map(McpServerContribution::getSyncToolSpecification)
-                .flatMap(List::stream)
-                .forEach(syncTool -> syncServer.addTool(syncTool));
+        for (var contribution : contributions) {
+            for (var tool : contribution.getSyncToolSpecification()) {
+                try {
+                    syncServer.addTool(tool);
+                } catch (IllegalArgumentException e) {
+                    logger.error(
+                            "Rejected MCP tool from contribution {}: {}",
+                            contribution.getClass().getName(),
+                            String.valueOf(e.getMessage()).replace("\r", "\\r").replace("\n", "\\n"));
+                }
+            }
+        }
 
         contributions.stream()
                 .map(McpServerContribution::getSyncResourceSpecification)

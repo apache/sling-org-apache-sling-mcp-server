@@ -158,4 +158,36 @@ class McpServerIT {
                 .as("SDK rejects arguments that do not match the tool input schema")
                 .isTrue();
     }
+
+    @Test
+    void typedToolArgumentsAreValidated() {
+        McpSchema.CallToolResult valid = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TYPED_TOOL_NAME, Map.of("name", "Sling")));
+        assertThat(valid.isError()).isFalse();
+        assertThat(valid.content())
+                .singleElement()
+                .isInstanceOfSatisfying(McpSchema.TextContent.class, text -> assertThat(text.text())
+                        .isEqualTo(ItToolContribution.TOOL_RESPONSE + " Sling"));
+
+        McpSchema.CallToolResult wrongType = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TYPED_TOOL_NAME, Map.of("name", 42)));
+        assertThat(wrongType.isError()).isTrue();
+
+        McpSchema.CallToolResult missing =
+                mcpClient.callTool(new McpSchema.CallToolRequest(ItToolContribution.TYPED_TOOL_NAME, null));
+        assertThat(missing.isError()).isTrue();
+    }
+
+    @Test
+    void validationDiagnosticsEscapeCallerControlledLineBreaks() {
+        McpSchema.CallToolResult result = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TOOL_NAME, Map.of("unexpected\r\nFORGED", "value")));
+
+        assertThat(result.isError()).isTrue();
+        assertThat(result.content())
+                .singleElement()
+                .isInstanceOfSatisfying(McpSchema.TextContent.class, text -> assertThat(text.text())
+                        .contains("unexpected\\r\\nFORGED")
+                        .doesNotContain("\r", "\n"));
+    }
 }

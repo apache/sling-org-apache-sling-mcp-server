@@ -49,6 +49,10 @@ class DiscoveredPromptBuilder {
 
     public DiscoveredPrompt buildPrompt(Resource prompt, String promptName) throws IOException {
 
+        if (promptName == null || promptName.isBlank()) {
+            throw new IOException("Prompt name must not be blank");
+        }
+
         Parser parser = Parser.builder()
                 .extensions(List.of(YamlFrontMatterExtension.create()))
                 .build();
@@ -70,36 +74,39 @@ class DiscoveredPromptBuilder {
 
             List<PromptArgument> arguments = new ArrayList<>();
 
-            visitor.getData().entrySet().stream()
-                    .filter(e -> e.getKey().startsWith("argument."))
-                    .forEach(e -> {
-                        String argName = e.getKey().substring("argument.".length());
-                        List<String> values = e.getValue();
-                        String argTitle = null;
-                        String argDesc = null;
-                        boolean argRequired = false;
-                        for (String value : values) {
+            for (var e : visitor.getData().entrySet()) {
+                if (!e.getKey().startsWith("argument.")) {
+                    continue;
+                }
+                String argName = e.getKey().substring("argument.".length());
+                if (argName.isBlank()) {
+                    throw new IOException("Prompt argument name must not be blank; use argument.<name>");
+                }
+                List<String> values = e.getValue();
+                String argTitle = null;
+                String argDesc = null;
+                boolean argRequired = false;
+                for (String value : values) {
 
-                            if (value.startsWith("title:")) {
-                                argTitle = value.substring("title:".length()).trim();
-                            } else if (value.startsWith("description:")) {
-                                argDesc =
-                                        value.substring("description:".length()).trim();
-                            } else if (value.startsWith("required:")) {
-                                String argRequiredRaw =
-                                        value.substring("required:".length()).trim();
-                                argRequired = Boolean.valueOf(argRequiredRaw);
-                            } else {
-                                logger.warn("Unknown argument property in prompt {}: {}", promptName, value);
-                            }
-                        }
+                    if (value.startsWith("title:")) {
+                        argTitle = value.substring("title:".length()).trim();
+                    } else if (value.startsWith("description:")) {
+                        argDesc = value.substring("description:".length()).trim();
+                    } else if (value.startsWith("required:")) {
+                        String argRequiredRaw =
+                                value.substring("required:".length()).trim();
+                        argRequired = Boolean.valueOf(argRequiredRaw);
+                    } else {
+                        logger.warn("Unknown argument property in prompt {}: {}", promptName, value);
+                    }
+                }
 
-                        arguments.add(PromptArgument.builder(argName)
-                                .title(argTitle)
-                                .description(argDesc)
-                                .required(argRequired)
-                                .build());
-                    });
+                arguments.add(PromptArgument.builder(argName)
+                        .title(argTitle)
+                        .description(argDesc)
+                        .required(argRequired)
+                        .build());
+            }
 
             return new RepositoryPrompt(prompt.getPath(), promptName, title, description, arguments);
         }
