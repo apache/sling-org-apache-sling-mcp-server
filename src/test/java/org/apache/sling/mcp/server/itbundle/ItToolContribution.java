@@ -35,18 +35,40 @@ public class ItToolContribution implements McpServerContribution {
 
     public static final String TOOL_NAME = "it-hello";
     public static final String TOOL_RESPONSE = "Hello from IT";
+    public static final String TYPED_TOOL_NAME = "it-hello-person";
 
     @Override
     public List<SyncToolSpecification> getSyncToolSpecification() {
-        McpSchema.Tool tool = McpSchema.Tool.builder()
-                .name(TOOL_NAME)
+        McpSchema.Tool tool = McpSchema.Tool.builder(
+                        TOOL_NAME, Map.of("type", "object", "properties", Map.of(), "additionalProperties", false))
                 .description("Integration test tool that returns a fixed greeting")
-                .inputSchema(new McpSchema.JsonSchema("object", Map.of(), null, null, null, null))
                 .build();
 
-        return List.of(new SyncToolSpecification(
-                tool,
-                (ctx, req) -> new McpSchema.CallToolResult(
-                        List.of(new McpSchema.TextContent(TOOL_RESPONSE)), Boolean.FALSE, null, null)));
+        McpSchema.Tool typedTool = McpSchema.Tool.builder(
+                        TYPED_TOOL_NAME,
+                        Map.of(
+                                "type",
+                                "object",
+                                "properties",
+                                Map.of("name", Map.of("type", "string", "minLength", 1)),
+                                "required",
+                                List.of("name"),
+                                "additionalProperties",
+                                false))
+                .description("Integration test tool with a required, typed argument")
+                .build();
+
+        return List.of(
+                new SyncToolSpecification(tool, (ctx, req) -> McpSchema.CallToolResult.builder()
+                        .content(List.of(
+                                McpSchema.TextContent.builder(TOOL_RESPONSE).build()))
+                        .isError(false)
+                        .build()),
+                new SyncToolSpecification(typedTool, (ctx, req) -> McpSchema.CallToolResult.builder()
+                        .content(List.of(McpSchema.TextContent.builder(
+                                        TOOL_RESPONSE + " " + req.arguments().get("name"))
+                                .build()))
+                        .isError(false)
+                        .build()));
     }
 }
