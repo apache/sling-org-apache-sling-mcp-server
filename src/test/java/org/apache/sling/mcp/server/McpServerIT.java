@@ -81,7 +81,7 @@ class McpServerIT {
 
     private McpSyncClient initializeMcpClient(String basicAuthHeader) {
 
-        return await("mcp client initializes")
+        return await("mcp client initializes with the IT contribution")
                 .atMost(AWAIT_TIMEOUT)
                 .pollInterval(AWAIT_POLL_INTERVAL)
                 .ignoreExceptions()
@@ -91,6 +91,11 @@ class McpServerIT {
 
                             try {
                                 candidate.initialize();
+                                if (candidate.listTools().tools().stream()
+                                        .noneMatch(tool -> ItToolContribution.TOOL_NAME.equals(tool.name()))) {
+                                    candidate.close();
+                                    return null;
+                                }
                                 return candidate;
                             } catch (RuntimeException e) {
                                 candidate.close();
