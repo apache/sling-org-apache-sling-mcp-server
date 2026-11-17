@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.sling.testing.clients.ClientException;
 import org.apache.sling.testing.clients.osgi.OsgiConsoleClient;
+import org.awaitility.Awaitility;
 import org.ops4j.pax.tinybundles.TinyBundles;
 import org.osgi.framework.Constants;
 
@@ -69,6 +71,13 @@ public class McpItSupportBundle {
         if (bundlePath == null) {
             throw new IllegalStateException("Bundle not generated; call generate() first");
         }
+        Awaitility.await("Sling Web Console is ready for bundle installation")
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofMillis(500))
+                .until(() -> client.doGet("/system/console/bundles.json", 200, 503)
+                                .getStatusLine()
+                                .getStatusCode()
+                        == 200);
         client.waitInstallBundle(bundlePath.toFile(), true, 10, TimeUnit.SECONDS.toMillis(10), 500);
     }
 

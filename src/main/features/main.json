@@ -5,11 +5,11 @@
         "start-order": 25
     },
     {
-        "id": "io.modelcontextprotocol.sdk:mcp-core:1.1.0",
+        "id": "io.modelcontextprotocol.sdk:mcp-core:2.1.0",
         "start-order": 25
     },
     {
-        "id": "io.modelcontextprotocol.sdk:mcp-json-jackson2:1.1.0",
+        "id": "io.modelcontextprotocol.sdk:mcp-json-jackson2:2.1.0",
         "start-order": 25
     },
     {
@@ -21,7 +21,7 @@
         "start-order": 25
     },
     {
-        "id": "com.networknt:json-schema-validator:2.0.0",
+        "id": "com.networknt:json-schema-validator:2.0.4",
         "start-order": 25
     },
     {

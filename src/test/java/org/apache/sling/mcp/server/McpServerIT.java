@@ -19,6 +19,7 @@
 package org.apache.sling.mcp.server;
 
 import java.net.URI;
+import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -80,7 +81,7 @@ class McpServerIT {
 
     private McpSyncClient initializeMcpClient(String basicAuthHeader) {
 
-        return await("mcp client initializes")
+        return await("mcp client initializes with the IT contribution")
                 .atMost(AWAIT_TIMEOUT)
                 .pollInterval(AWAIT_POLL_INTERVAL)
                 .ignoreExceptions()
@@ -90,6 +91,11 @@ class McpServerIT {
 
                             try {
                                 candidate.initialize();
+                                if (candidate.listTools().tools().stream()
+                                        .noneMatch(tool -> ItToolContribution.TOOL_NAME.equals(tool.name()))) {
+                                    candidate.close();
+                                    return null;
+                                }
                                 return candidate;
                             } catch (RuntimeException e) {
                                 candidate.close();
@@ -103,11 +109,12 @@ class McpServerIT {
         HttpClientStreamableHttpTransport transport = HttpClientStreamableHttpTransport.builder(
                         "http://localhost:" + slingPort)
                 .endpoint(MCP_ENDPOINT)
-                .customizeRequest(rb -> rb.header("Authorization", basicAuthHeader))
+                .requestBuilder(HttpRequest.newBuilder().header("Authorization", basicAuthHeader))
                 .build();
 
         return McpClient.sync(transport)
-                .clientInfo(new McpSchema.Implementation("mcp-server-it", "1.0"))
+                .clientInfo(
+                        McpSchema.Implementation.builder("mcp-server-it", "1.0").build())
                 .requestTimeout(Duration.ofSeconds(30))
                 .build();
     }
@@ -148,5 +155,44 @@ class McpServerIT {
                 .first()
                 .isInstanceOfSatisfying(McpSchema.TextContent.class, tc -> assertThat(tc.text())
                         .isEqualTo(ItToolContribution.TOOL_RESPONSE));
+
+        McpSchema.CallToolResult invalidResult = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TOOL_NAME, Map.of("unexpected", "value")));
+
+        assertThat(invalidResult.isError())
+                .as("SDK rejects arguments that do not match the tool input schema")
+                .isTrue();
+    }
+
+    @Test
+    void typedToolArgumentsAreValidated() {
+        McpSchema.CallToolResult valid = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TYPED_TOOL_NAME, Map.of("name", "Sling")));
+        assertThat(valid.isError()).isFalse();
+        assertThat(valid.content())
+                .singleElement()
+                .isInstanceOfSatisfying(McpSchema.TextContent.class, text -> assertThat(text.text())
+                        .isEqualTo(ItToolContribution.TOOL_RESPONSE + " Sling"));
+
+        McpSchema.CallToolResult wrongType = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TYPED_TOOL_NAME, Map.of("name", 42)));
+        assertThat(wrongType.isError()).isTrue();
+
+        McpSchema.CallToolResult missing =
+                mcpClient.callTool(new McpSchema.CallToolRequest(ItToolContribution.TYPED_TOOL_NAME, null));
+        assertThat(missing.isError()).isTrue();
+    }
+
+    @Test
+    void validationDiagnosticsEscapeCallerControlledLineBreaks() {
+        McpSchema.CallToolResult result = mcpClient.callTool(
+                new McpSchema.CallToolRequest(ItToolContribution.TOOL_NAME, Map.of("unexpected\r\nFORGED", "value")));
+
+        assertThat(result.isError()).isTrue();
+        assertThat(result.content())
+                .singleElement()
+                .isInstanceOfSatisfying(McpSchema.TextContent.class, text -> assertThat(text.text())
+                        .contains("unexpected\\r\\nFORGED")
+                        .doesNotContain("\r", "\n"));
     }
 }
